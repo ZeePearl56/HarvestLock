@@ -32,8 +32,13 @@ export async function withRetry<T>(
     try {
       return await fn();
     } catch (err) {
+      // Only retry on transient network errors (TypeError from fetch,
+      // AbortError, or Soroban RPC timeouts). Real errors like 4xx/5xx
+      // should not be retried as they indicate permanent failures.
+      const isTransient = err instanceof TypeError || err instanceof DOMException || (err instanceof Error && err.message?.includes("timeout"));
       lastError = err;
       if (attempt === attempts) break;
+      if (!isTransient) break;
       const delay = baseDelayMs * 2 ** (attempt - 1);
       await new Promise((resolve) => setTimeout(resolve, delay));
     }

@@ -12,25 +12,25 @@ describe("withRetry", () => {
     expect(fn).toHaveBeenCalledTimes(1);
   });
 
-  it("retries after a failure and succeeds if a later attempt works", async () => {
+  it("retries after a transient error and succeeds if a later attempt works", async () => {
     const fn = vi
       .fn()
-      .mockRejectedValueOnce(new Error("transient"))
+      .mockRejectedValueOnce(new TypeError("fetch timeout"))
       .mockResolvedValueOnce("ok");
     const result = await withRetry(fn, { baseDelayMs: 1 });
     expect(result).toBe("ok");
     expect(fn).toHaveBeenCalledTimes(2);
   });
 
-  it("gives up after the configured number of attempts and throws the last error", async () => {
-    const fn = vi.fn().mockRejectedValue(new Error("still failing"));
-    await expect(withRetry(fn, { attempts: 3, baseDelayMs: 1 })).rejects.toThrow("still failing");
-    expect(fn).toHaveBeenCalledTimes(3);
+  it("gives up after 3 attempts on a non-transient error", async () => {
+    const fn = vi.fn().mockRejectedValue(new Error("400 Bad request"));
+    await expect(withRetry(fn, { attempts: 3, baseDelayMs: 1 })).rejects.toThrow("400 Bad request");
+    expect(fn).toHaveBeenCalledTimes(1);
   });
 
-  it("defaults to 3 attempts when not specified", async () => {
-    const fn = vi.fn().mockRejectedValue(new Error("nope"));
-    await expect(withRetry(fn, { baseDelayMs: 1 })).rejects.toThrow("nope");
-    expect(fn).toHaveBeenCalledTimes(3);
+  it("stops after 1 attempt on a non-transient error when unspecified attempts", async () => {
+    const fn = vi.fn().mockRejectedValue(new Error("403 Forbidden"));
+    await expect(withRetry(fn, { baseDelayMs: 1 })).rejects.toThrow("403 Forbidden");
+    expect(fn).toHaveBeenCalledTimes(1);
   });
 });

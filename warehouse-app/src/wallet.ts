@@ -30,7 +30,8 @@ export interface FreighterError {
 
 function throwIfError(error: FreighterError | undefined): void {
   if (error) {
-    throw new Error(typeof error.message === "string" ? error.message : JSON.stringify(error));
+    const msg = typeof error.message === "string" ? error.message : JSON.stringify(error);
+    throw new Error(`Freighter error${error.code ? ` (code: ${error.code})` : ""}: ${msg}`);
   }
 }
 

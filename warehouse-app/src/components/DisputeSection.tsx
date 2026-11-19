@@ -107,7 +107,11 @@ export function DisputeSection({
       .then(({ xdr }) => signTransactionXdr(xdr, walletAddress!))
       .then((signedXdr) => submitTx(signedXdr, contractId))
       .then(() => onDisputeChanged())
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : String(err)))
+      .catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : String(err));
+        // Re-throw or log for debugging - flagging failure should be visible
+        console.error("Dispute flagging failed:", err);
+      })
       .finally(() => setBusy(false));
   }
 
@@ -116,7 +120,10 @@ export function DisputeSection({
     setError(null);
     proposeResolveDispute(contractId, walletAddress!)
       .then(setProposal)
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : String(err)))
+      .catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : String(err));
+        console.error("Dispute proposal failed:", err);
+      })
       .finally(() => setBusy(false));
   }
 
